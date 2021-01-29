@@ -9,14 +9,13 @@ const signin = require("./controllers/signin");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
 const db = knex({
-  // connect to your own database here
   client: "pg",
   connection: {
-    host: "127.0.0.1",
-    user: "postgres",
-    password: "test",
-    database: "smart-brain",
+    connectionString: process.env.DATABASE_URL,
+    ssl: true,
   },
 });
 
@@ -26,7 +25,14 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send(db.users);
+  db("users")
+    .select()
+    .then((data) => {
+      res.status(200).json(data);
+    })
+    .catch((error) => {
+      res.status(500).json({ message: "oupsy" });
+    });
 });
 
 app.post("/signin", signin.handleSignin(db, bcrypt));
@@ -46,6 +52,6 @@ app.post("/imageurl", (req, res) => {
   image.handleApiCall(req, res);
 });
 
-app.listen(3000, () => {
-  console.log("app is running on port 3000");
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`apps running on ${process.env.PORT}`);
 });
